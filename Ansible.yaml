@@ -1,0 +1,66 @@
+
+
+  # - hosts: all
+  #   remote_user: ubuntu
+  #   become: yes
+  #   tasks:
+  #   - name: Install Nginx
+  #     apt:
+  #       name: nginx
+  #       state: latest
+  #   - name: Make sure Nginx is running
+  #     systemd:
+  #       state: started
+  #       name: nginx
+
+
+  - name: AO Week4
+    hosts: all
+    remote_user: ubuntu
+    become: yes
+    vars:
+    - app_path: "/var/www/html/Flask_app"
+    tasks:
+      - name: update && upgrade
+        become: true
+        apt:
+            upgrade: yes
+            update_cache: yes
+            cache_valid_time: 86400
+      - name: Install packages
+        become: yes
+        package:
+          name:
+            - apache2
+            #- docker.io
+            #- docker-compose
+            - python3-pip
+            - libapache2-mod-wsgi-py3
+      - name: copy-Flask-app
+        become: yes
+        # git:
+        #   repo: 'https://github.com/cobreaker/Flask-app.git'
+        #   dest: /var/www/html/
+        #   update: yes
+        copy:
+          src: ./Flask-app
+          dest: /var/www/html
+      # - name: Ansible copy wsgi file to the project folder
+      #   become: yes
+      #   template:
+      #     src: ./wsgi.j2
+      #     dest: /var/www/html/Flask-app/app.wsgi
+      - name: Download app requirements
+        become: yes
+        pip:
+          requirements: /var/www/html/Flask-app/requirements.txt
+      - name: Ansible copy apache conf file to remote server
+        become: yes
+        template:
+          src: /home/chapy/ansible-books/conf
+          dest: /etc/apache2/sites-available/000-default.conf
+      - name: restart apache service
+        become: yes
+        service:
+          name: apache2
+          state: restarted
